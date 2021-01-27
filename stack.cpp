@@ -4,51 +4,83 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define STACK_OVERFLOW  -100
-#define STACK_UNDERFLOW -101
-#define OUT_OF_MEMORY   -102
-
-#define INITIAL_SIZE 10
+#define INITIAL_CAPACITY 10
+#define X_CAPACITY 2
 
 typedef double elem_t;
 
-struct stack
+typedef struct Stack
 {
-    elem_t *data;
+    size_t  capacity;
     size_t  size;
-    size_t   top;
-};
+    elem_t* data;
+} Stack_t;
 
-struct stack* stack_create ();
-void   stack_destruct ();
-void   push ();
-void   pop ();
+Stack_t* stack_construct (Stack_t* heap);
 
-struct stack* stack_create ()
+void   stack_destruct (Stack_t **stack); 
+void   stack_resize   (Stack_t* stack); 
+void   push           (Stack_t* stack, elem_t value);
+
+elem_t pop            (Stack_t* stack);
+elem_t peek           (const Stack_t* stack); 
+
+int main()
 {
-    struct stack* out = calloc (1, sizeof (struct stack));
-    
-    assert (out != NULL);
-    
-    out -> size = INITIAL_SIZE;
-    out -> data = calloc (out -> size, sizeof (elem_t));
-    
-    assert ((out -> data) != NULL);
-    
-    out -> top = 0;
-    return out;
+    Stack_t stk = {};
+    stack_construct (&stk);
+    stack_destruct  (&stk); 
 }
 
-void stack_destruct (struct stack **stack) 
+Stack_t* stack_construct (Stack_t* heap)
+{   
+    assert (heap != NULL);
+    
+    heap -> capacity = INITIAL_CAPACITY;
+    heap -> data     = (elem_t*) calloc (heap -> capacity, sizeof (elem_t));
+    
+    assert ((heap -> data) != NULL);
+    
+    heap -> size = 0;
+    return heap;
+}
+
+void stack_destruct (Stack_t **stack) 
 {
     free ((*stack) -> data);
     free (*stack);
     *stack = NULL;
 }
 
-int main()
+void stack_resize (Stack_t* stack) 
 {
-    struct stack* heap = stack_create ();
+    stack -> capacity *= X_SIZE;
+    stack -> data  = (elem_t*) realloc (stack -> data, stack -> capacity * sizeof(elem_t));
+    
+    assert ((stack -> data ) == NULL);
+}
 
-    stack_destruct (&heap);
+void push (Stack_t* stack, elem_t value) 
+{
+    if ((stack -> size) >= (stack -> capacity)) 
+    {
+        resize (stack);
+    }
+    stack -> data [stack -> size] = value;
+    (stack -> size)++;
+}
+
+elem_t pop (Stack_t* stack) 
+{
+    assert ((stack -> size) == 0);
+    (stack -> size)--;
+
+    return stack -> data[stack -> size];
+}
+
+elem_t peek (const Stack_t* stack) 
+{
+    assert ((stack -> size) <= 0);
+    
+    return stack -> data[stack -> size - 1];
 }
