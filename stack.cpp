@@ -1,64 +1,79 @@
 #include <stdio.h>
+#include <math.h>
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <math.h>
 
 #define INITIAL_CAPACITY 10
 #define X_CAPACITY 2
+#define POISON_XXX NAN
 
 typedef double elem_t;
 
 typedef struct Stack
 {
-    size_t  capacity;
-    size_t  size;
+    size_t  capacity; // макс колво в стеке
+    size_t  size; // колво элементов 
     elem_t* data;
-} Stack_t;
+}  Stack_t;
 
-Stack_t* stack_construct (Stack_t* heap);
+//-----------------------------------------------------------------------------------------
 
-void   stack_destruct (Stack_t **stack); 
-void   stack_resize   (Stack_t* stack); 
-void   push           (Stack_t* stack, elem_t value);
+void   stack_destruct     (Stack_t* stack); 
+void   stack_realloc      (Stack_t* stack); 
+void   push (Stack_t* stack, elem_t value);
 
-elem_t pop            (Stack_t* stack);
-elem_t peek           (const Stack_t* stack); 
+Stack_t* stack_construct (Stack_t* stack);
+elem_t   pop             (Stack_t* stack);
+elem_t   peek      (const Stack_t* stack); 
+
+//-----------------------------------------------------------------------------------------
 
 int main()
 {
     Stack_t stk = {};
+
     stack_construct (&stk);
     stack_destruct  (&stk); 
 }
 
-Stack_t* stack_construct (Stack_t* heap)
+//-----------------------------------------------------------------------------------------
+
+Stack_t* stack_construct (Stack_t* stack)
 {   
-    assert (heap != NULL);
+    assert (stack != NULL);
     
-    heap -> capacity = INITIAL_CAPACITY;
-    heap -> data     = (elem_t*) calloc (heap -> capacity, sizeof (elem_t));
+    stack -> capacity = INITIAL_CAPACITY;
+    stack -> data     = (elem_t*) calloc (stack -> capacity, sizeof (elem_t));
     
-    assert ((heap -> data) != NULL);
+    assert ((stack -> data) != NULL);
     
-    heap -> size = 0;
-    return heap;
+    stack -> size = 0;
+    return stack;
 }
 
-void stack_destruct (Stack_t **stack) 
+//-----------------------------------------------------------------------------------------
+
+void stack_destruct (Stack_t* stack) 
 {
-    free ((*stack) -> data);
-    free (*stack);
-    *stack = NULL;
+    free (stack -> data);
+
+    stack -> data     = NULL;
+    stack -> size     = POISON_XXX;
+    stack -> capacity = POISON_XXX;
 }
 
-void stack_resize (Stack_t* stack) 
+//-----------------------------------------------------------------------------------------
+
+void stack_realloc (Stack_t* stack) 
 {
-    stack -> capacity *= X_SIZE;
-    stack -> data  = (elem_t*) realloc (stack -> data, stack -> capacity * sizeof(elem_t));
+    stack -> capacity *= X_CAPACITY;
+    stack -> data      = (elem_t*) realloc (stack -> data, (stack -> capacity) * sizeof (elem_t));
     
-    assert ((stack -> data ) == NULL);
+    assert ((stack -> data) == NULL);
 }
+
+//-----------------------------------------------------------------------------------------
 
 void push (Stack_t* stack, elem_t value) 
 {
@@ -70,6 +85,8 @@ void push (Stack_t* stack, elem_t value)
     (stack -> size)++;
 }
 
+//-----------------------------------------------------------------------------------------
+
 elem_t pop (Stack_t* stack) 
 {
     assert ((stack -> size) == 0);
@@ -78,9 +95,14 @@ elem_t pop (Stack_t* stack)
     return stack -> data[stack -> size];
 }
 
+//-----------------------------------------------------------------------------------------
+
 elem_t peek (const Stack_t* stack) 
 {
     assert ((stack -> size) <= 0);
     
     return stack -> data[stack -> size - 1];
 }
+
+//-----------------------------------------------------------------------------------------
+
