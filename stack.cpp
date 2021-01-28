@@ -7,6 +7,7 @@
 #define INITIAL_CAPACITY 10
 #define X_CAPACITY 2
 #define POISON_XXX NAN
+#define DATA_POISON -1
 
 typedef double elem_t;
 
@@ -23,9 +24,8 @@ void   stack_destruct     (Stack_t* stack);
 void   stack_realloc      (Stack_t* stack); 
 void   push (Stack_t* stack, elem_t value);
 
-Stack_t* stack_construct (Stack_t* stack);
-elem_t   pop             (Stack_t* stack);
-elem_t   peek      (const Stack_t* stack); 
+Stack_t* stack_construct  (Stack_t* stack);
+elem_t   stack_pop        (Stack_t* stack);
 
 //-----------------------------------------------------------------------------------------
 
@@ -59,8 +59,8 @@ void stack_destruct (Stack_t* stack)
     free (stack -> data);
 
     stack -> data     = NULL;
-    stack -> size     = POISON_XXX;
-    stack -> capacity = POISON_XXX;
+    stack -> size     = DATA_POISON;
+    stack -> capacity = DATA_POISON;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -75,34 +75,24 @@ void stack_realloc (Stack_t* stack)
 
 //-----------------------------------------------------------------------------------------
 
-void push (Stack_t* stack, elem_t value) 
+void stack_push (Stack_t* stack, elem_t value) 
 {
     if ((stack -> size) >= (stack -> capacity)) 
     {
-        resize (stack);
+        stack_realloc (stack);
     }
     stack -> data [stack -> size] = value;
-    (stack -> size)++;
+    stack -> size++;
 }
 
 //-----------------------------------------------------------------------------------------
 
-elem_t pop (Stack_t* stack) 
+elem_t stack_pop (Stack_t* stack) 
 {
     assert ((stack -> size) == 0);
-    (stack -> size)--;
+    stack -> size--;
 
     return stack -> data[stack -> size];
 }
 
 //-----------------------------------------------------------------------------------------
-
-elem_t peek (const Stack_t* stack) 
-{
-    assert ((stack -> size) <= 0);
-    
-    return stack -> data[stack -> size - 1];
-}
-
-//-----------------------------------------------------------------------------------------
-
