@@ -52,8 +52,7 @@ int main()
     stack_push (&stk, 16);
     stack_push (&stk, 17);
     stack_push (&stk, 18);
-    stack_pop (&stk);
-   // printf ("%f", stack_pop  (&stk));
+    printf ("You took out the element from the top - %f\n", stack_pop (&stk));
 
     for (int i = 0; i < stk.capacity; i++) printf ("%f\n", *(stk.data + i));
 
@@ -71,7 +70,7 @@ Stack_t* stack_construct (Stack_t* stack)
     
     assert ((stack -> data) != NULL);
     
-    poison_fill_in (stack, 0, stack -> capacity);\
+    poison_fill_in (stack, 0, stack -> capacity);
 
     stack -> size = 0;
     return stack;
@@ -126,9 +125,9 @@ elem_t stack_pop (Stack_t* stack)
 {
     stack_verificate (stack);
 
-    elem_t out = *(stack -> data + stack -> size);
+    elem_t out = *(stack -> data + stack -> size - 1);
 
-    poison_fill_in (stack, stack -> size, stack -> size + 1);
+    poison_fill_in (stack, stack -> size - 1, stack -> size);
 
     stack -> size--;
 
@@ -150,6 +149,4 @@ void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
     {
         *(stack -> data + i) = POISON_XXX;
     }
-    printf ("beg - %ld\n", beg);
-    printf ("end - %ld\n", end);
 }
