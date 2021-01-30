@@ -142,7 +142,7 @@ void stack_verificate (Stack_t* stack)
 {
     assert (stack != NULL);
     assert ((stack -> size) != 0);
-    assert ((stack -> data) != 0);
+    assert ((stack -> data) != NULL);
 }
 
 void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
