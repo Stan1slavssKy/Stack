@@ -6,10 +6,14 @@
 
 #define INITIAL_CAPACITY 10
 #define X_CAPACITY 2
-#define POISON_XXX NAN
 #define DATA_POISON -1
 
-typedef double elem_t;
+#define DOUBLE_TYPE
+
+#ifdef DOUBLE_TYPE
+    typedef double elem_t;
+    #define POISON_XXX NAN
+#endif
 
 typedef struct Stack
 {
@@ -40,7 +44,7 @@ int main()
     
     stack_push (&stk, 10);
     stack_push (&stk, 11);
-    stack_push (&stk, 12);
+  /*  stack_push (&stk, 12);
     stack_push (&stk, 13);
     stack_push (&stk, 14);
     stack_push (&stk, 15);
@@ -50,8 +54,7 @@ int main()
     stack_push (&stk, 19);
     stack_push (&stk, 20);
     stack_push (&stk, 21);
-    printf ("%f", stack_pop  (&stk));
-    
+    printf ("%f", stack_pop  (&stk));*/
 
     for (int i = 0; i < stk.capacity; i++) printf ("%f\n", *(stk.data + i));
 
@@ -108,7 +111,7 @@ void stack_push (Stack_t* stack, elem_t value)
 {
     assert (stack != NULL);
     assert ((stack -> data) != 0);
-    
+
     if ((stack -> size + 1) >= (stack -> capacity)) 
     {
         stack_realloc (stack);
