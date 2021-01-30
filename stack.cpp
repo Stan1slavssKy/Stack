@@ -33,6 +33,7 @@ void     stack_destruct   (Stack_t* stack);
 void     stack_realloc    (Stack_t* stack); 
 
 void  stack_push (Stack_t* stack, elem_t value);
+void  poison_fill_in (Stack_t* stack, size_t beg, size_t end);
 
 //-----------------------------------------------------------------------------------------
 
@@ -44,7 +45,7 @@ int main()
     
     stack_push (&stk, 10);
     stack_push (&stk, 11);
-  /*  stack_push (&stk, 12);
+    stack_push (&stk, 12);
     stack_push (&stk, 13);
     stack_push (&stk, 14);
     stack_push (&stk, 15);
@@ -52,9 +53,8 @@ int main()
     stack_push (&stk, 17);
     stack_push (&stk, 18);
     stack_push (&stk, 19);
-    stack_push (&stk, 20);
-    stack_push (&stk, 21);
-    printf ("%f", stack_pop  (&stk));*/
+    stack_pop (&stk);
+   // printf ("%f", stack_pop  (&stk));
 
     for (int i = 0; i < stk.capacity; i++) printf ("%f\n", *(stk.data + i));
 
@@ -72,7 +72,7 @@ Stack_t* stack_construct (Stack_t* stack)
     
     assert ((stack -> data) != NULL);
     
-    for (int i = 0; i < stack -> capacity; i++) *(stack -> data + i) = POISON_XXX;
+    poison_fill_in (stack, 0, stack -> capacity);\
 
     stack -> size = 0;
     return stack;
@@ -100,7 +100,7 @@ void stack_realloc (Stack_t* stack)
     stack -> capacity *= X_CAPACITY;
     stack -> data      = (elem_t*) realloc (stack -> data, (stack -> capacity) * sizeof (elem_t));
     
-    for (int i = old_capacity; i < stack -> capacity; i++) *(stack -> data + i) = POISON_XXX;
+    poison_fill_in (stack, old_capacity, stack -> capacity);
 
     assert ((stack -> data) != NULL);
 }
@@ -128,7 +128,8 @@ elem_t stack_pop (Stack_t* stack)
     stack_verificate (stack);
 
     elem_t out = *(stack -> data + stack -> size);
-    *(stack -> data + stack -> size) = POISON_XXX; 
+
+    poison_fill_in (stack, stack -> size, stack -> size + 1);
 
     stack -> size--;
 
@@ -142,4 +143,12 @@ void stack_verificate (Stack_t* stack)
     assert (stack != NULL);
     assert ((stack -> size) != 0);
     assert ((stack -> data) != 0);
+}
+
+void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
+{
+    for (size_t i = beg; i < end; i++)
+    {
+        *(stack -> data + i) = POISON_XXX;
+    }
 }
