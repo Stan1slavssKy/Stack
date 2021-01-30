@@ -32,7 +32,8 @@ void     stack_verificate (Stack_t* stack);
 void     stack_destruct   (Stack_t* stack); 
 void     stack_realloc    (Stack_t* stack); 
 
-void  stack_push (Stack_t* stack, elem_t value);
+void  stack_push     (Stack_t* stack, elem_t value);
+void  stack_damp     (Stack_t stack);
 void  poison_fill_in (Stack_t* stack, size_t beg, size_t end);
 
 //-----------------------------------------------------------------------------------------
@@ -52,9 +53,10 @@ int main()
     stack_push (&stk, 16);
     stack_push (&stk, 17);
     stack_push (&stk, 18);
+    stack_push (&stk, 19);
     printf ("You took out the element from the top - %f\n", stack_pop (&stk));
 
-    for (int i = 0; i < stk.capacity; i++) printf ("%f\n", *(stk.data + i));
+    stack_damp (stk);
 
     stack_destruct  (&stk); 
 }
@@ -149,4 +151,29 @@ void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
     {
         *(stack -> data + i) = POISON_XXX;
     }
+}
+
+void stack_damp (Stack_t stack)
+{
+    //печать в консоль
+    printf ("===========STACK DUMP===========\n");
+    printf ("Stack size     = %ld\n", stack.size);
+    printf ("Stack capacity = %ld\n", stack.capacity);
+    printf ("Stack data     = %p\n", stack.data);
+    printf ("Stack right now:    \n");
+
+    for (int i = 0; i < stack.capacity; i++) printf ("\t%f\n", *(stack.data + i));
+    printf ("================================\n");
+
+    //печать в файл 
+    FILE* file = fopen ("Stack dump.txt", "w");
+
+    fprintf (file, "===========STACK DUMP===========\n");
+    fprintf (file, "Stack capacity = %ld\n", stack.capacity);
+    fprintf (file, "Stack size     = %ld\n", stack.size);
+    fprintf (file, "Stack data     = %p\n", stack.data);
+    fprintf (file, "Stack right now:    \n");
+
+    for (int i = 0; i < stack.capacity; i++) fprintf (file, "\t%f\n", *(stack.data + i));
+    fprintf (file, "================================\n");
 }
