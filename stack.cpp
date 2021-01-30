@@ -52,7 +52,6 @@ int main()
     stack_push (&stk, 16);
     stack_push (&stk, 17);
     stack_push (&stk, 18);
-    stack_push (&stk, 19);
     stack_pop (&stk);
    // printf ("%f", stack_pop  (&stk));
 
@@ -151,4 +150,6 @@ void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
     {
         *(stack -> data + i) = POISON_XXX;
     }
+    printf ("beg - %ld\n", beg);
+    printf ("end - %ld\n", end);
 }
