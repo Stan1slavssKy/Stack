@@ -8,6 +8,8 @@
 #define X_CAPACITY 2
 #define DATA_POISON -1
 
+//-----------------------------------------------------------------------------------------
+
 #define DOUBLE_TYPE
 
 #ifdef DOUBLE_TYPE
@@ -15,26 +17,40 @@
     #define POISON_XXX NAN
 #endif
 
+//-----------------------------------------------------------------------------------------
+
+typedef unsigned long long canary_t;
+
+const canary_t Canary = 0xFADEBEEF;
+
 typedef struct Stack
 {
+    canary_t left_struct_canary;
+
     size_t  capacity; // макс колво в стеке
     size_t  size;     // колво элементов 
     elem_t* data;
-    size_t  hash;
+    
+    size_t  struct_hash;
+    size_t  stack_hash;
+
+    canary_t right_struct_canary;
 }  Stack_t;
 
 //-----------------------------------------------------------------------------------------
 
-Stack_t* stack_construct  (Stack_t* stack);
+Stack_t* stack_construct  (Stack_t* stack, long capacity);
 elem_t   stack_pop        (Stack_t* stack);
 
 void     stack_verificate (Stack_t* stack);
 void     stack_destruct   (Stack_t* stack); 
 void     stack_realloc    (Stack_t* stack); 
 
-void  stack_push     (Stack_t* stack, elem_t value);
-void  stack_damp     (Stack_t stack);
-void  poison_fill_in (Stack_t* stack, size_t beg, size_t end);
+void     stack_push       (Stack_t* stack, elem_t value);
+void     stack_damp       (Stack_t  stack);
+void     poison_fill_in   (Stack_t* stack, size_t beg, size_t end);
+
+void     placing_canaries (Stack_t* stack, void* memory);
 
 //-----------------------------------------------------------------------------------------
 
@@ -42,7 +58,7 @@ int main()
 {
     Stack_t stk = {};
 
-    stack_construct (&stk);
+    stack_construct (&stk, 3);
     
     stack_push (&stk, 10);
     stack_push (&stk, 11);
@@ -63,18 +79,39 @@ int main()
 
 //-----------------------------------------------------------------------------------------
 
-Stack_t* stack_construct (Stack_t* stack)
+Stack_t* stack_construct (Stack_t* stack, long capacity)
 {   
     assert (stack != NULL);
-    
-    stack -> capacity = INITIAL_CAPACITY;
-    stack -> data     = (elem_t*) calloc (stack -> capacity, sizeof (elem_t));
-    
-    assert ((stack -> data) != NULL);
-    
-    poison_fill_in (stack, 0, stack -> capacity);
+    assert (capacity >= 0);
 
-    stack -> size = 0;
+    if (capacity == 0)
+    {
+        stack -> capacity = (size_t) capacity;
+        stack -> size = 0;
+        stack -> data = NULL;
+        stack -> left_struct_canary  = Canary;
+        stack -> right_struct_canary = Canary;
+
+        stack_realloc (stack);
+    }
+
+    else 
+    {
+        stack -> capacity = (size_t) capacity;
+        stack -> size = 0;
+        stack -> data = NULL;
+        stack -> left_struct_canary  = Canary;
+        stack -> right_struct_canary = Canary;
+        
+        poison_fill_in (stack, 0, stack -> capacity);
+        
+        void* memory = calloc (1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
+        assert (memory != NULL);
+
+        placing_canaries (stack, memory);
+
+        stack -> size = 0;
+    }
     return stack;
 }
 
@@ -95,6 +132,14 @@ void stack_realloc (Stack_t* stack)
 {
     stack_verificate (stack);
     
+    if (stack -> capacity = 0)
+    {
+        stack -> capacity = INITIAL_CAPACITY;
+        stack -> data     = (elem_t*) calloc (stack -> capacity, sizeof (elem_t));
+    
+        poison_fill_in (stack, 0, stack -> capacity);
+    }
+
     size_t old_capacity = stack -> capacity;
 
     stack -> capacity *= X_CAPACITY;
@@ -117,7 +162,7 @@ void stack_push (Stack_t* stack, elem_t value)
         stack_realloc (stack);
     }
 
-    stack -> data [stack -> size] = value;
+    *(stack -> data + stack -> size) = value;
     stack -> size++;
 }
 
@@ -145,6 +190,8 @@ void stack_verificate (Stack_t* stack)
     assert ((stack -> data) != NULL);
 }
 
+//-----------------------------------------------------------------------------------------
+
 void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
 {
     for (size_t i = beg; i < end; i++)
@@ -152,6 +199,8 @@ void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
         *(stack -> data + i) = POISON_XXX;
     }
 }
+
+//-----------------------------------------------------------------------------------------
 
 void stack_damp (Stack_t stack)
 {
@@ -176,4 +225,19 @@ void stack_damp (Stack_t stack)
 
     for (int i = 0; i < stack.capacity; i++) fprintf (file, "\t%f\n", *(stack.data + i));
     fprintf (file, "================================\n");
+}
+
+//-----------------------------------------------------------------------------------------
+
+void placing_canaries (Stack_t* stack, void* memory)
+{
+    assert (stack != NULL);
+    
+    canary_t* canary_array_left = (canary_t*) memory;
+    *canary_array_left = Canary;
+        
+    stack -> data = (elem_t*) (canary_array_left + 1);
+                        
+    canary_t* canary_array_right = (canary_t*) (stack -> data + stack -> capacity);
+    *canary_array_right = Canary;  
 }
