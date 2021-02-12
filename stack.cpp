@@ -58,7 +58,7 @@ int main()
 {
     Stack_t stk = {};
 
-    stack_construct (&stk, 3);
+    stack_construct (&stk, 0);
     
     stack_push (&stk, 10);
     stack_push (&stk, 11);
@@ -95,7 +95,7 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
         stack_realloc (stack);
     }
 
-    else 
+    else
     {
         stack -> capacity = (size_t) capacity;
         stack -> size = 0;
@@ -103,14 +103,12 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
         stack -> left_struct_canary  = Canary;
         stack -> right_struct_canary = Canary;
         
-        poison_fill_in (stack, 0, stack -> capacity);
-        
         void* memory = calloc (1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
+        
         assert (memory != NULL);
 
         placing_canaries (stack, memory);
-
-        stack -> size = 0;
+        poison_fill_in   (stack, stack -> size, stack -> capacity);
     }
     return stack;
 }
@@ -130,24 +128,28 @@ void stack_destruct (Stack_t* stack)
 
 void stack_realloc (Stack_t* stack) 
 {
-    stack_verificate (stack);
-    
     if (stack -> capacity = 0)
     {
+        assert (stack != NULL);
+
         stack -> capacity = INITIAL_CAPACITY;
-        stack -> data     = (elem_t*) calloc (stack -> capacity, sizeof (elem_t));
+        void* memory      = calloc (1, stack -> capacity * sizeof (elem_t) + 2 * sizeof (canary_t));
     
-        poison_fill_in (stack, 0, stack -> capacity);
+        placing_canaries (stack, memory);
+        poison_fill_in (stack, stack -> size, stack -> capacity);
     }
 
-    size_t old_capacity = stack -> capacity;
+    else 
+    {
+        size_t old_capacity = stack -> capacity;
 
-    stack -> capacity *= X_CAPACITY;
-    stack -> data      = (elem_t*) realloc (stack -> data, (stack -> capacity) * sizeof (elem_t));
-    
-    poison_fill_in (stack, old_capacity, stack -> capacity);
+        stack -> capacity *= X_CAPACITY;
+        stack -> data      = (elem_t*) realloc (stack -> data, (stack -> capacity) * sizeof (elem_t));
+        
+        poison_fill_in (stack, old_capacity, stack -> capacity);
 
-    assert ((stack -> data) != NULL);
+        assert ((stack -> data) != NULL);
+    }
 }
 
 //-----------------------------------------------------------------------------------------
@@ -236,7 +238,7 @@ void placing_canaries (Stack_t* stack, void* memory)
     canary_t* canary_array_left = (canary_t*) memory;
     *canary_array_left = Canary;
         
-    stack -> data = (elem_t*) (canary_array_left + 1);
+    stack -> data = (elem_t*) (canary_array_left + 1); //ложит указатель в структуру 
                         
     canary_t* canary_array_right = (canary_t*) (stack -> data + stack -> capacity);
     *canary_array_right = Canary;  
