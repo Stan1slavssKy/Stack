@@ -117,7 +117,7 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
 
 void stack_destruct (Stack_t* stack) 
 {
-    free (stack -> data);
+    free ((canary_t*) (stack -> data) - 1);
 
     stack -> data     = NULL;
     stack -> size     = DATA_POISON;
@@ -128,7 +128,7 @@ void stack_destruct (Stack_t* stack)
 
 void stack_realloc (Stack_t* stack) 
 {
-    if (stack -> capacity = 0)
+    if (stack -> capacity == 0)
     {
         assert (stack != NULL);
 
@@ -136,16 +136,16 @@ void stack_realloc (Stack_t* stack)
         void* memory      = calloc (1, stack -> capacity * sizeof (elem_t) + 2 * sizeof (canary_t));
     
         placing_canaries (stack, memory);
-        poison_fill_in (stack, stack -> size, stack -> capacity);
+        poison_fill_in   (stack, stack -> size, stack -> capacity);
     }
 
-    else 
+    else if (stack -> capacity == stack -> size + 1)
     {
         size_t old_capacity = stack -> capacity;
-
         stack -> capacity *= X_CAPACITY;
-        stack -> data      = (elem_t*) realloc (stack -> data, (stack -> capacity) * sizeof (elem_t));
         
+        void* memory = realloc ((canary_t*)(stack -> data) - 1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
+
         poison_fill_in (stack, old_capacity, stack -> capacity);
 
         assert ((stack -> data) != NULL);
