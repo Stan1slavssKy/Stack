@@ -4,6 +4,8 @@
 #include <assert.h>
 #include <stdlib.h>
 
+//-----------------------------------------------------------------------------------------
+
 #define INITIAL_CAPACITY 10
 #define X_CAPACITY 2
 #define DATA_POISON -1
@@ -16,6 +18,32 @@
     typedef double elem_t;
     #define POISON_XXX NAN
 #endif
+//-----------------------------------------------------------------------------------------
+
+#define ASSERT_OK(stack) if (stack_ok(stack))            \
+                                {                        \
+                                    stack_dump (*stack); \
+                                    abort ();            \
+                                }                        \
+
+//-----------------------------------------------------------------------------------------
+
+#define case_of_switch(enum_const) case enum_const: return #enum_const;
+
+//-----------------------------------------------------------------------------------------
+
+enum error
+{
+    MEMORY_OUT = 1,
+    NEGATIVE_SIZE,
+    NEGATIVE_CAPACITY,
+    WRONG_CANARY_STRUCT_LEFT,
+    WRONG_CANARY_STRUCT_RIGHT,
+    WRONG_CANARY_ARRAY_LEFT,
+    WRONG_CANARY_ARRAY_RIGHT,
+    NULL_DATA,
+
+};
 
 //-----------------------------------------------------------------------------------------
 
@@ -31,6 +59,8 @@ typedef struct Stack
     size_t  size;     // колво элементов 
     elem_t* data;
     
+    int error;
+
     size_t  struct_hash;
     size_t  stack_hash;
 
@@ -42,15 +72,17 @@ typedef struct Stack
 Stack_t* stack_construct  (Stack_t* stack, long capacity);
 elem_t   stack_pop        (Stack_t* stack);
 
-void     stack_verificate (Stack_t* stack);
+int      stack_ok         (Stack_t* stack);
 void     stack_destruct   (Stack_t* stack); 
 void     stack_realloc    (Stack_t* stack); 
 
 void     stack_push       (Stack_t* stack, elem_t value);
-void     stack_damp       (Stack_t  stack);
+void     stack_dump       (Stack_t  stack);
 void     poison_fill_in   (Stack_t* stack, size_t beg, size_t end);
 
 void     placing_canaries (Stack_t* stack, void* memory);
+void     stack_null       (Stack_t* stack);
+
 
 //-----------------------------------------------------------------------------------------
 
@@ -72,7 +104,7 @@ int main()
     stack_push (&stk, 19);
     printf ("You took out the element from the top - %f\n", stack_pop (&stk));
 
-    stack_damp (stk);
+    stack_dump (stk);
 
     stack_destruct  (&stk); 
 }
@@ -81,8 +113,7 @@ int main()
 
 Stack_t* stack_construct (Stack_t* stack, long capacity)
 {   
-    assert (stack != NULL);
-    assert (capacity >= 0);
+    stack_null (stack);
 
     if (capacity == 0)
     {
@@ -95,7 +126,7 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
         stack_realloc (stack);
     }
 
-    else
+    else if (capacity > 0)
     {
         stack -> capacity = (size_t) capacity;
         stack -> size = 0;
@@ -105,11 +136,22 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
         
         void* memory = calloc (1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
         
-        assert (memory != NULL);
+        if (memory == NULL)
+        {
+            stack -> error = MEMORY_OUT;
+            ASSERT_OK (stack);
+        }
 
         placing_canaries (stack, memory);
         poison_fill_in   (stack, stack -> size, stack -> capacity);
     }
+
+    else if (capacity < 0)
+    {
+        stack -> error = NEGATIVE_CAPACITY;
+        ASSERT_OK (stack);
+    }
+
     return stack;
 }
 
@@ -126,15 +168,31 @@ void stack_destruct (Stack_t* stack)
 
 //-----------------------------------------------------------------------------------------
 
+void stack_null (Stack_t* stack)
+{
+    if (stack == NULL)
+    {
+        printf ("STACK IS NULL!\n");
+        abort ();
+    }
+}
+
+//-----------------------------------------------------------------------------------------
 void stack_realloc (Stack_t* stack) 
 {
+    stack_null (stack);
+
     if (stack -> capacity == 0)
     {
-        assert (stack != NULL);
-
         stack -> capacity = INITIAL_CAPACITY;
         void* memory      = calloc (1, stack -> capacity * sizeof (elem_t) + 2 * sizeof (canary_t));
     
+        if (memory == NULL)
+        {
+            stack -> error = MEMORY_OUT;
+            ASSERT_OK (stack);
+        }
+
         placing_canaries (stack, memory);
         poison_fill_in   (stack, stack -> size, stack -> capacity);
     }
@@ -148,7 +206,7 @@ void stack_realloc (Stack_t* stack)
 
         poison_fill_in (stack, old_capacity, stack -> capacity);
 
-        assert ((stack -> data) != NULL);
+        ASSERT_OK (stack);
     }
 }
 
@@ -156,8 +214,8 @@ void stack_realloc (Stack_t* stack)
 
 void stack_push (Stack_t* stack, elem_t value) 
 {
+    ASSERT_OK (stack);
     assert (stack != NULL);
-    assert ((stack -> data) != 0);
 
     if ((stack -> size + 1) >= (stack -> capacity)) 
     {
@@ -172,7 +230,8 @@ void stack_push (Stack_t* stack, elem_t value)
 
 elem_t stack_pop (Stack_t* stack) 
 {
-    stack_verificate (stack);
+    ASSERT_OK (stack);
+    assert (stack != NULL);
 
     elem_t out = *(stack -> data + stack -> size - 1);
 
@@ -181,15 +240,6 @@ elem_t stack_pop (Stack_t* stack)
     stack -> size--;
 
     return out;
-}
-
-//-----------------------------------------------------------------------------------------
-
-void stack_verificate (Stack_t* stack)
-{
-    assert (stack != NULL);
-    assert ((stack -> size) != 0);
-    assert ((stack -> data) != NULL);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -204,7 +254,7 @@ void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
 
 //-----------------------------------------------------------------------------------------
 
-void stack_damp (Stack_t stack)
+void stack_dump (Stack_t stack)
 {
     //печать в консоль
     printf ("===========STACK DUMP===========\n");
@@ -243,3 +293,38 @@ void placing_canaries (Stack_t* stack, void* memory)
     canary_t* canary_array_right = (canary_t*) (stack -> data + stack -> capacity);
     *canary_array_right = Canary;  
 }
+
+//-----------------------------------------------------------------------------------------
+
+int stack_ok (Stack_t* stack)
+{
+    if (stack -> error != 0)
+    {
+        return stack -> error;
+    }
+
+    else
+    {
+        if (stack -> left_struct_canary != Canary)
+        {
+            stack -> error = WRONG_CANARY_STRUCT_LEFT;
+            return WRONG_CANARY_STRUCT_LEFT;
+        }
+
+        if (stack -> right_struct_canary != Canary)
+        {
+            stack -> error = WRONG_CANARY_STRUCT_RIGHT;
+            return WRONG_CANARY_STRUCT_RIGHT;
+        }
+
+        if (stack -> capacity != 0 && stack -> data == NULL)
+        {
+            stack -> error = NULL_DATA;
+            return NULL_DATA;
+        }
+    }
+
+    return 0;
+}
+
+//-----------------------------------------------------------------------------------------
