@@ -28,8 +28,8 @@
 
 //-----------------------------------------------------------------------------------------
 
-#define error_case(enum_particle) case enum_particle:            \
-                                          return #enum_particle; \
+#define error_case(enum_particle) case enum_particle:        \
+                                      return #enum_particle; \
 
 //-----------------------------------------------------------------------------------------
 
@@ -56,7 +56,8 @@ typedef struct Stack
     canary_t left_struct_canary;
 
     size_t  capacity; // макс колво в стеке
-    size_t  size;     // колво элементов 
+    size_t  size; // колво элементов 
+
     elem_t* data;
     
     int error;
@@ -84,27 +85,17 @@ void     placing_canaries (Stack_t* stack, void* memory);
 
 const char* error_detect  (Stack_t* stack);
 
-
-
 //-----------------------------------------------------------------------------------------
 
 int main()
 {
+   
     Stack_t stk = {};
 
-    stack_construct (&stk, 0);
-    
-    stack_push (&stk, 10);
-    stack_push (&stk, 11);
-    stack_push (&stk, 12);
-    stack_push (&stk, 13);
-    stack_push (&stk, 14);
-    stack_push (&stk, 15);
-    stack_push (&stk, 16);
-    stack_push (&stk, 17);
-    stack_push (&stk, 18);
-    stack_push (&stk, 19);
-    printf ("You took out the element from the top - %f\n", stack_pop (&stk));
+    stack_construct (&stk, 1);
+
+    for (int i = 0; i < 10; i++)
+        stack_push (&stk, 10);
 
     stack_dump (&stk);
 
@@ -200,22 +191,22 @@ void stack_realloc (Stack_t* stack)
         poison_fill_in   (stack, stack -> size, stack -> capacity);
     }
 
-    else if (stack -> capacity == stack -> size + 1)
+    else if (stack -> capacity == stack -> size)
     {
         size_t old_capacity = stack -> capacity;
-        stack -> capacity *= X_CAPACITY;
-        
-        void* memory = realloc ((canary_t*)(stack -> data) - 1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
-        
+        void* memory = realloc ((canary_t*)(stack -> data) - 1, (stack -> capacity *= X_CAPACITY) * sizeof (elem_t) + 2 * sizeof (canary_t));
+
         if (memory == NULL)
         {
             stack -> error = MEMORY_OUT;
             assert_ok (stack);
         }
 
+        placing_canaries (stack, memory);
         poison_fill_in (stack, old_capacity, stack -> capacity);
 
         assert_ok (stack);
+        
     }
 }
 
@@ -226,10 +217,11 @@ void stack_push (Stack_t* stack, elem_t value)
     assert_ok  (stack);
     stack_null (stack);
 
-    if ((stack -> size + 1) >= (stack -> capacity)) 
+    if ((stack -> size + 1) > (stack -> capacity)) 
     {
         stack_realloc (stack);
     }
+
 
     *(stack -> data + stack -> size) = value;
     stack -> size++;
@@ -266,38 +258,30 @@ void poison_fill_in (Stack_t* stack, size_t beg, size_t end)
 void stack_dump (Stack_t* stack)
 {
     const char* text_of_error = error_detect (stack);
-    
+
+    canary_t* left_arr_can  = (canary_t*)(stack -> data) - 1;
+    canary_t* right_arr_can = (canary_t*)(stack -> data + stack -> capacity);
 
     //печать в консоль
-    printf ("===========STACK DUMP===========\n");
+    printf ("===================STACK DUMP===================\n");
     if (stack -> error != 0)
         printf ("Error №%d found in the stack: %s\n", stack -> error, text_of_error);
-    else 
-        printf ("Stack is OK!\n");
-    printf ("Stack size     = %ld\n", stack -> size);
-    printf ("Stack capacity = %ld\n", stack -> capacity);
-    printf ("Stack data     = %p\n", stack -> data);
-    printf ("Stack right now:    \n");
+    else
+        printf ("\t\t  Stack is OK!\n");
+   
+    printf ("Struct right canary[%p] = %lld\n", &stack -> left_struct_canary, stack -> left_struct_canary);
+    printf ("Stack  size                         = %ld\n", stack -> size) ;
+    printf ("Stack  capacity                     = %ld\n", stack -> capacity);
+    printf ("Array  left  canary[%p] = %lld\n", left_arr_can, *left_arr_can);
+    printf ("Stack  data                     = %p\n", stack -> data);
+    printf ("Array  right canary[%p] = %lld\n", right_arr_can, *right_arr_can);
+    printf ("Struct right canary[%p] = %lld\n", &stack -> right_struct_canary, stack -> right_struct_canary);
 
-    for (int i = 0; i < stack -> capacity; i++) printf ("\t%f\n", *(stack -> data + i));
-    printf ("================================\n");
-
-    //печать в файл 
-    FILE* file = fopen ("Stack dump.txt", "w");
-
-    fprintf (file, "===========STACK DUMP===========\n");
-    if (stack -> error != 0)
-        fprintf (file, "Error №%d found in the stack: %s\n", stack -> error, text_of_error);
-    else 
-        fprintf (file, "Stack is OK!\n");
-    fprintf (file, "Stack capacity = %ld\n", stack -> capacity);
-    fprintf (file, "Stack size     = %ld\n", stack -> size);
-    fprintf (file, "Stack data     = %p\n", stack -> data);
-    fprintf (file, "Stack right now:    \n");
-
-    for (int i = 0; i < stack -> capacity; i++) fprintf (file, "\t%f\n", *(stack -> data + i));
-    fprintf (file, "================================\n");
-    fclose (file);
+    for (int i = 0; i < stack -> capacity; i++) printf ("\t\t[%d]: %f\n", i, *(stack -> data + i));
+    printf ("================================================\n");
+  /*  ЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗАААААААААААААМММММММММММММЕЕЕЕЕЕЕЕЕЕЕЕЕННННННННННИИИИИИИИИИИИТТТТТТТТТТТТТТЬЬЬЬЬЬЬЬЬЬЬЬ
+заменить %lld на define
+*/
 }
 
 //-----------------------------------------------------------------------------------------
@@ -309,7 +293,7 @@ void placing_canaries (Stack_t* stack, void* memory)
     canary_t* canary_array_left = (canary_t*) memory;
     *canary_array_left = Canary;
         
-    stack -> data = (elem_t*) (canary_array_left + 1); //ложит указатель в структуру 
+    stack -> data = (elem_t*) (canary_array_left + 1); //кладёт указатель в структуру 
                         
     canary_t* canary_array_right = (canary_t*) (stack -> data + stack -> capacity);
     *canary_array_right = Canary;  
@@ -355,8 +339,8 @@ int stack_ok (Stack_t* stack)
             return WRONG_CANARY_ARRAY_LEFT;
         }
 
-        if (*((canary_t*)(stack -> data) + stack -> capacity) != Canary)
-        {
+        if (*((canary_t*)(stack -> data + stack -> capacity)) != Canary)
+        {    
             stack -> error = WRONG_CANARY_ARRAY_RIGHT;
             return WRONG_CANARY_ARRAY_RIGHT;
         }
