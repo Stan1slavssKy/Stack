@@ -271,7 +271,7 @@ void stack_dump (Stack_t* stack)
     else
         printf ("\t\t  Stack is OK!\n");
    
-    printf ("Struct right canary[%p] = %lld\n", &stack -> left_struct_canary, stack -> left_struct_canary);
+    printf ("Struct left  canary[%p] = %lld\n", &stack -> left_struct_canary, stack -> left_struct_canary);
     printf ("Stack  size                         = %ld\n", stack -> size) ;
     printf ("Stack  capacity                     = %ld\n", stack -> capacity);
     printf ("Array  left  canary[%p] = %lld\n", left_arr_can, *left_arr_can);
