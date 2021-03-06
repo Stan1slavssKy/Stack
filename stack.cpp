@@ -154,9 +154,12 @@ void stack_destruct (Stack_t* stack)
 {
     free ((canary_t*) (stack -> data) - 1);
 
-    stack -> data     = NULL;
-    stack -> size     = DATA_POISON;
-    stack -> capacity = DATA_POISON;
+    stack -> data                = NULL;       
+    stack -> size                = DATA_POISON; 
+    stack -> error               = 0;           
+    stack -> capacity            = DATA_POISON;             
+    stack -> left_struct_canary  = -Canary;  
+    stack -> right_struct_canary = -Canary;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -262,7 +265,6 @@ void stack_dump (Stack_t* stack)
     canary_t* left_arr_can  = (canary_t*)(stack -> data) - 1;
     canary_t* right_arr_can = (canary_t*)(stack -> data + stack -> capacity);
 
-    //печать в консоль
     printf ("===================STACK DUMP===================\n");
     if (stack -> error != 0)
         printf ("Error №%d found in the stack: %s\n", stack -> error, text_of_error);
