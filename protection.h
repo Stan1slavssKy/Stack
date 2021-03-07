@@ -1,7 +1,7 @@
 #ifndef PROTECTION_H_INCLUDED
 #define PROTECTION_H_INCLUDED
 
-#include <stack.h>
+#include "stack.h"
 
 #define DATA_POISON -1
 #define DOUBLE_TYPE
