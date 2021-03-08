@@ -43,7 +43,10 @@ enum error
 //-----------------------------------------------------------------------------------------
 
 int  stack_ok         (Stack_t* stack);
+size_t stack_hash     (Stack_t* stack);
+
 void stack_dump       (Stack_t* stack);
+void print_array      (Stack_t* stack);
 void stack_null       (Stack_t* stack);
 void poison_fill_in   (Stack_t* stack, size_t beg, size_t end);
 void placing_canaries (Stack_t* stack, void* memory);
