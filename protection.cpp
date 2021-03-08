@@ -51,6 +51,7 @@ const char* error_detect (Stack_t* stack)
         error_case (WRONG_CANARY_ARRAY_LEFT);
         error_case (WRONG_CANARY_ARRAY_RIGHT);
         error_case (NULL_DATA);
+        error_case (WRONG_HASH);
 
         default:
             return "UNNOWN_ERROR!";
@@ -102,6 +103,14 @@ int stack_ok (Stack_t* stack)
             stack -> error = WRONG_CANARY_ARRAY_RIGHT;
             return WRONG_CANARY_ARRAY_RIGHT;
         }
+
+        if (stack -> hash == stack_hash (stack))
+        {
+            stack -> error = WRONG_HASH;
+            printf ("Stack hacked!\n");
+           
+            return WRONG_HASH;
+        }
     }
 
     return 0;
@@ -130,7 +139,8 @@ void stack_dump (Stack_t* stack)
     printf ("Array  right canary[%p] = %lld\n", right_arr_can, *right_arr_can);
     printf ("Struct right canary[%p] = %lld\n", &stack -> right_struct_canary, stack -> right_struct_canary);
 
-    for (int i = 0; i < stack -> capacity; i++) printf ("\t\t[%d]: %f\n", i, *(stack -> data + i));
+    print_array (stack);
+  //  for (int i = 0; i < stack -> capacity; i++) printf ("\t\t[%d]: %f\n", i, *(stack -> data + i));
     printf ("================================================\n");
   /*  ЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗАААААААААААААМММММММММММММЕЕЕЕЕЕЕЕЕЕЕЕЕННННННННННИИИИИИИИИИИИТТТТТТТТТТТТТТЬЬЬЬЬЬЬЬЬЬЬЬ
 заменить %lld на define
@@ -138,3 +148,24 @@ void stack_dump (Stack_t* stack)
 }
 
 //-------------------------------------------------------------------------------------------------------------
+
+void print_array (Stack_t* stack)
+{
+    #ifdef DOUBLE_TYPE
+        for (int i = 0; i < stack -> capacity; i++) 
+            printf ("\t\t[%d]: %f\n", i, *(stack -> data + i)); 
+    #else
+        #ifdef INT_TYPE
+            for (int i = 0; i < stack -> capacity; i++) 
+                printf ("\t\t[%d]: %d\n", i, *(stack -> data + i));
+        #endif
+    #endif
+}
+//-------------------------------------------------------------------------------------------------------------
+
+size_t stack_hash (Stack_t* stack)
+{
+    stack -> hash = stack -> left_struct_canary & stack -> capacity & stack -> size & stack -> error & stack -> right_struct_canary;
+
+    return stack -> hash;
+}
