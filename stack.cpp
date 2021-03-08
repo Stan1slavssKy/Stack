@@ -33,6 +33,7 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
 
         placing_canaries (stack, memory);
         poison_fill_in   (stack, stack -> size, stack -> capacity);
+        assert_ok (stack);
     }
 
     else if (capacity < 0)
@@ -63,6 +64,7 @@ void stack_realloc (Stack_t* stack)
 
         placing_canaries (stack, memory);
         poison_fill_in   (stack, stack -> size, stack -> capacity);
+        assert_ok (stack);
     }
 
     else if (stack -> capacity == stack -> size)
@@ -80,7 +82,6 @@ void stack_realloc (Stack_t* stack)
         poison_fill_in (stack, old_capacity, stack -> capacity);
 
         assert_ok (stack);
-        
     }
 }
 
@@ -96,9 +97,10 @@ void stack_push (Stack_t* stack, elem_t value)
         stack_realloc (stack);
     }
 
-
     *(stack -> data + stack -> size) = value;
     stack -> size++;
+
+    assert_ok (stack);
 }
 
 //-----------------------------------------------------------------------------------------
@@ -113,6 +115,8 @@ elem_t stack_pop (Stack_t* stack)
     poison_fill_in (stack, stack -> size - 1, stack -> size);
 
     stack -> size--;
+
+    assert_ok (stack);
 
     return out;
 }
