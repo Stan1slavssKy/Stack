@@ -2,7 +2,7 @@
 
 void stack_null (Stack_t* stack)
 {
-    if (stack == NULL)
+    if (stack == nullptr)
     {
         printf ("STACK IS NULL!\n");
         abort ();
@@ -69,7 +69,13 @@ int stack_ok (Stack_t* stack)
 
     else
     {
-        if (stack -> capacity != 0 && stack -> data == NULL)
+        if (stack -> capacity != 0 && stack -> data == nullptr)
+        {
+            stack -> error = NULL_DATA;
+            return NULL_DATA;
+        }
+        
+        if (stack -> data == nullptr)
         {
             stack -> error = NULL_DATA;
             return NULL_DATA;
@@ -104,7 +110,7 @@ int stack_ok (Stack_t* stack)
             return WRONG_CANARY_ARRAY_RIGHT;
         }
 
-        if (stack -> hash == stack_hash (stack))
+        if (stack -> hash != stack_hash (stack))
         {
             stack -> error = WRONG_HASH;
             printf ("Stack hacked!\n");
@@ -120,31 +126,34 @@ int stack_ok (Stack_t* stack)
 
 void stack_dump (Stack_t* stack)
 {
+    assert_ok (stack);
     const char* text_of_error = error_detect (stack);
 
     canary_t* left_arr_can  = (canary_t*)(stack -> data) - 1;
     canary_t* right_arr_can = (canary_t*)(stack -> data + stack -> capacity);
 
     printf ("===================STACK DUMP===================\n");
-    if (stack -> error != 0)
-        printf ("Error №%d found in the stack: %s\n", stack -> error, text_of_error);
-    else
-        printf ("\t\t  Stack is OK!\n");
    
+    #ifdef PROTECTION
+        if (stack -> error != 0)
+            printf ("Error №%d found in the stack: %s\n", stack -> error, text_of_error);
+        else
+            printf ("\t\t  Stack is OK!\n");
+    #endif 
+
     printf ("Struct left  canary[%p] = %lld\n", &stack -> left_struct_canary, stack -> left_struct_canary);
     printf ("Stack  size                         = %ld\n", stack -> size) ;
     printf ("Stack  capacity                     = %ld\n", stack -> capacity);
     printf ("Array  left  canary[%p] = %lld\n", left_arr_can, *left_arr_can);
-    printf ("Stack  data                     = %p\n", stack -> data);
+    printf ("Stack  data        [%p]\n", stack -> data);
     printf ("Array  right canary[%p] = %lld\n", right_arr_can, *right_arr_can);
     printf ("Struct right canary[%p] = %lld\n", &stack -> right_struct_canary, stack -> right_struct_canary);
 
     print_array (stack);
-  //  for (int i = 0; i < stack -> capacity; i++) printf ("\t\t[%d]: %f\n", i, *(stack -> data + i));
     printf ("================================================\n");
-  /*  ЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗЗАААААААААААААМММММММММММММЕЕЕЕЕЕЕЕЕЕЕЕЕННННННННННИИИИИИИИИИИИТТТТТТТТТТТТТТЬЬЬЬЬЬЬЬЬЬЬЬ
-заменить %lld на define
-*/
+  
+    /* ЗЗЗЗЗЗЗЗЗЗААААААМММЕЕЕЕЕЕЕЕЕЕЕННИИИИИИИИИИИИТТТТТТТТТТТТТТЬЬЬЬЬЬЬЬЬЬЬЬ заменить %lld на define*/ 
+    assert_ok (stack);
 }
 
 //-------------------------------------------------------------------------------------------------------------
@@ -161,11 +170,28 @@ void print_array (Stack_t* stack)
         #endif
     #endif
 }
+
 //-------------------------------------------------------------------------------------------------------------
 
 size_t stack_hash (Stack_t* stack)
 {
-    stack -> hash = stack -> left_struct_canary & stack -> capacity & stack -> size & stack -> error & stack -> right_struct_canary;
+   size_t temp = stack -> capacity ^ stack -> size + stack -> capacity | stack -> size;
 
+    for (int i = 0; i < stack -> size; i++)
+    {
+        if (temp == 0)
+            temp |= ((size_t)(*(stack -> data + i))) << i + ((size_t)(*(stack -> data + i))) | i;
+        else if (i % 3 == 0)
+            temp ^= (size_t)(*(stack -> data + i)) + i << (size_t)(*(stack -> data + i));
+        else  if (i % 3 == 1)
+            temp ^= (size_t)(*(stack -> data + i)) - i ^ (size_t)(*(stack -> data + i));
+        else    
+            temp |= (size_t)(*(stack -> data + i)) - i ^ (size_t)(*(stack -> data + i));
+    }
+
+    temp <<= stack -> capacity ^ stack -> error;
+
+    stack -> hash = temp;
+    
     return stack -> hash;
 }
