@@ -1,15 +1,14 @@
 #include "protection.h"
 
-int main()
+int main(/*int argc, char** argv*/)
 {
-    Stack_t stk = {};
+    // STACK CONSTRUCT ON EXISTING STACK
+    stack_constr (stk, 0);
 
-    stack_construct (&stk, 1);
-
-    for (int i = 0; i < 10; i++)
-        stack_push (&stk, 10);
+    for (int i = 0; i < 15; i++)
+        stack_push (&stk, i);
 
     stack_dump (&stk);
-
+   // stk.data = nullptr;
     stack_destruct  (&stk); 
 }
