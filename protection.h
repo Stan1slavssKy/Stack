@@ -4,7 +4,7 @@
 #include "stack.h"
 
 #define DATA_POISON -1
-#define DOUBLE_TYPE
+
 
 #ifdef DOUBLE_TYPE
     #define POISON_XXX NAN
@@ -13,13 +13,22 @@
 #ifdef INT_TYPE
     #define POISON_XXX 0xBAADEDAA
 #endif
+
+
+
 //-----------------------------------------------------------------------------------------
 
-#define assert_ok(stack) if (stack_ok(stack))     \
-                         {                        \
-                             stack_dump (stack);  \
-                             abort ();            \
-                         }                        \
+#define PROTECTION //подключение защиты 
+
+#ifdef PROTECTION 
+    #define assert_ok(stack) if (stack_ok(stack))    \
+                             {                       \
+                                 stack_dump (stack); \
+                                 abort ();           \
+                             }      
+#else 
+    #define assert_ok(stack) 1+1;                 
+#endif 
 
 //-----------------------------------------------------------------------------------------
 
@@ -30,19 +39,20 @@
 
 enum error
 {
-    MEMORY_OUT = 1,
-    NULL_DATA,
-    NEGATIVE_SIZE,
-    NEGATIVE_CAPACITY,
-    WRONG_CANARY_STRUCT_LEFT,
-    WRONG_CANARY_STRUCT_RIGHT,
-    WRONG_CANARY_ARRAY_LEFT,
-    WRONG_CANARY_ARRAY_RIGHT,
+    MEMORY_OUT                = 1,
+    NULL_DATA                 = 2,
+    NEGATIVE_SIZE             = 3,
+    NEGATIVE_CAPACITY         = 4,
+    WRONG_CANARY_STRUCT_LEFT  = 5,
+    WRONG_CANARY_STRUCT_RIGHT = 6,
+    WRONG_CANARY_ARRAY_LEFT   = 7,
+    WRONG_CANARY_ARRAY_RIGHT  = 8,
+    WRONG_HASH                = 9
 };
 
 //-----------------------------------------------------------------------------------------
 
-int  stack_ok         (Stack_t* stack);
+int    stack_ok       (Stack_t* stack);
 size_t stack_hash     (Stack_t* stack);
 
 void stack_dump       (Stack_t* stack);
