@@ -12,6 +12,13 @@
 
 //----------------------------------------------------------
 
+#define stack_constr(stack_name, capacity)       \
+        Stack_t stack_name = {};                 \
+        stk.name = #stack_name;                  \
+        stack_construct (&stack_name, capacity); 
+
+//----------------------------------------------------------
+    
 #define DOUBLE_TYPE
 
 #ifdef DOUBLE_TYPE
@@ -25,13 +32,15 @@
 //----------------------------------------------------------
 
 typedef unsigned long long canary_t;
-const canary_t Canary = 0xFADEBEEF;
+const canary_t Canary = 0xDEADBEEF;
 
 //----------------------------------------------------------
 
 typedef struct Stack
 {
     canary_t left_struct_canary;
+    
+    const char* name;
 
     size_t  capacity; // макс колво в стеке
     size_t  size; // колво элементов 
@@ -40,8 +49,7 @@ typedef struct Stack
     
     int error;
 
-    size_t  struct_hash;
-    size_t  stack_hash;
+    size_t  hash;
 
     canary_t right_struct_canary;
 }  Stack_t;
