@@ -8,7 +8,7 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
     {
         stack -> capacity = (size_t) capacity;
         stack -> size = 0;
-        stack -> data = NULL;
+        stack -> data = nullptr;
         stack -> left_struct_canary  = Canary;
         stack -> right_struct_canary = Canary;
 
@@ -19,20 +19,27 @@ Stack_t* stack_construct (Stack_t* stack, long capacity)
     {
         stack -> capacity = (size_t) capacity;
         stack -> size = 0;
-        stack -> data = NULL;
+        stack -> data = nullptr;
         stack -> left_struct_canary  = Canary;
         stack -> right_struct_canary = Canary;
         
-        void* memory = calloc (1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
-        
-        if (memory == NULL)
-        {
-            stack -> error = MEMORY_OUT;
-            assert_ok (stack);
-        }
+        #ifdef PROTECTION 
+            void* memory = calloc (1, (stack -> capacity) * sizeof (elem_t) + 2 * sizeof (canary_t));
+            
+            if (memory == nullptr)
+            {
+                stack -> error = MEMORY_OUT;
+                assert_ok (stack);
+            }
 
-        placing_canaries (stack, memory);
-        poison_fill_in   (stack, stack -> size, stack -> capacity);
+            placing_canaries (stack, memory);
+            poison_fill_in   (stack, stack -> size, stack -> capacity);
+
+            stack -> hash = stack_hash (stack);
+        #else 
+            stack -> data = (elem_t*) calloc (1, (stack -> capacity) * sizeof (elem_t));
+        #endif
+
         assert_ok (stack);
     }
 
@@ -54,33 +61,48 @@ void stack_realloc (Stack_t* stack)
     if (stack -> capacity == 0)
     {
         stack -> capacity = INITIAL_CAPACITY;
-        void* memory      = calloc (1, stack -> capacity * sizeof (elem_t) + 2 * sizeof (canary_t));
 
-        if (memory == NULL)
-        {
-            stack -> error = MEMORY_OUT;
-            assert_ok (stack);
-        }
+        #ifdef PROTECTION 
+            void* memory = calloc (1, stack -> capacity * sizeof (elem_t) + 2 * sizeof (canary_t));
 
-        placing_canaries (stack, memory);
-        poison_fill_in   (stack, stack -> size, stack -> capacity);
+            if (memory == nullptr)
+            {
+                stack -> error = MEMORY_OUT;
+                assert_ok (stack);
+            }
+
+            placing_canaries (stack, memory);
+            poison_fill_in   (stack, stack -> size, stack -> capacity);
+
+            stack -> hash = stack_hash (stack);
+        #else
+            stack -> data = (elem_t*) calloc (1, stack -> capacity * sizeof (elem_t));
+        #endif 
+
         assert_ok (stack);
     }
 
     else if (stack -> capacity == stack -> size)
     {
         size_t old_capacity = stack -> capacity;
-        void* memory = realloc ((canary_t*)(stack -> data) - 1, (stack -> capacity *= X_CAPACITY) * sizeof (elem_t) + 2 * sizeof (canary_t));
+        
+        #ifdef PROTECTION 
+            void* memory = realloc ((canary_t*)(stack -> data) - 1, (stack -> capacity *= X_CAPACITY) * sizeof (elem_t) + 2 * sizeof (canary_t));
 
-        if (memory == NULL)
-        {
-            stack -> error = MEMORY_OUT;
-            assert_ok (stack);
-        }
+            if (memory == nullptr)
+            {
+                stack -> error = MEMORY_OUT;
+                assert_ok (stack);
+            }
 
-        placing_canaries (stack, memory);
-        poison_fill_in (stack, old_capacity, stack -> capacity);
+            placing_canaries (stack, memory);
+            poison_fill_in (stack, old_capacity, stack -> capacity);
 
+            stack -> hash = stack_hash (stack);
+        #else 
+            stack -> data = (elem_t*) realloc (stack -> data, (stack -> capacity *= X_CAPACITY) * sizeof (elem_t));
+        #endif
+        
         assert_ok (stack);
     }
 }
@@ -100,6 +122,8 @@ void stack_push (Stack_t* stack, elem_t value)
     *(stack -> data + stack -> size) = value;
     stack -> size++;
 
+    stack -> hash = stack_hash (stack);
+
     assert_ok (stack);
 }
 
@@ -115,7 +139,8 @@ elem_t stack_pop (Stack_t* stack)
     poison_fill_in (stack, stack -> size - 1, stack -> size);
 
     stack -> size--;
-
+    stack -> hash = stack_hash (stack);
+    
     assert_ok (stack);
 
     return out;
@@ -125,14 +150,22 @@ elem_t stack_pop (Stack_t* stack)
 
 void stack_destruct (Stack_t* stack) 
 {
-    free ((canary_t*) (stack -> data) - 1);
+    assert_ok (stack);
+    
+    #ifdef PROTECTION
+        free ((canary_t*) (stack -> data) - 1);
+    #else
+        free (stack -> data);
+    #endif
 
-    stack -> data                = NULL;       
+    stack -> data                = nullptr;       
     stack -> size                = DATA_POISON; 
     stack -> error               = 0;           
     stack -> capacity            = DATA_POISON;             
-    stack -> left_struct_canary  = -Canary;  
-    stack -> right_struct_canary = -Canary;
+    stack -> left_struct_canary  = Canary - 1;  
+    stack -> right_struct_canary = Canary - 1;
+
+    //assert_ok (stack);
 }
 
 //-----------------------------------------------------------------------------------------
