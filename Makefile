@@ -6,7 +6,7 @@ LIBRARY = libstack.a
 default: $(OUTPUT) library
 
 $(OUTPUT): $(OBJECT)
-	g++ $(OBJECT) -o $(OUTPUT)
+	g++ -Wall -Wextra $(OBJECT) -o $(OUTPUT)
 	./$(OUTPUT)
 
 main.o: main.cpp
