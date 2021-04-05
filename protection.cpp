@@ -5,7 +5,6 @@ void stack_null (Stack_t* stack)
     if (stack == nullptr)
     {
         printf ("STACK IS NULL!\n");
-        abort ();
     }
 }
 
@@ -62,6 +61,8 @@ const char* error_detect (Stack_t* stack)
 
 int stack_ok (Stack_t* stack)
 {
+    printf("enter stack_ok" );
+
     if (stack -> error != 0)
     {
         return stack -> error;
@@ -126,7 +127,6 @@ int stack_ok (Stack_t* stack)
 
 void stack_dump (Stack_t* stack)
 {
-    assert_ok (stack);
     const char* text_of_error = error_detect (stack);
 
     canary_t* left_arr_can  = (canary_t*)(stack -> data) - 1;
@@ -151,9 +151,6 @@ void stack_dump (Stack_t* stack)
 
     print_array (stack);
     printf ("================================================\n");
-  
-    /* ЗЗЗЗЗЗЗЗЗЗААААААМММЕЕЕЕЕЕЕЕЕЕЕННИИИИИИИИИИИИТТТТТТТТТТТТТТЬЬЬЬЬЬЬЬЬЬЬЬ заменить %lld на define*/ 
-    assert_ok (stack);
 }
 
 //-------------------------------------------------------------------------------------------------------------
@@ -210,6 +207,21 @@ size_t stack_hash (Stack_t* stack)
 
     total_hash += hash_2;
 
+    unsigned int i_3 = 0;
+    unsigned int hash_3 = 0;
+
+    while (i_3 != stack->capacity)
+    {
+        hash_3 += stack->name[i_3++];
+        hash_3 += hash_1 << 10;
+        hash_3 ^= hash_1 >> 6;
+    }
+
+    hash_3 += hash_3 << 3;
+    hash_3 ^= hash_3 >> 11;
+    hash_3 += hash_3 << 15;
+
+    total_hash += hash_3;
     stack->hash = total_hash;
     //я скопипастил
     return total_hash;

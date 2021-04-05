@@ -22,7 +22,6 @@
     #define assert_ok(stack) if (stack_ok(stack))    \
                              {                       \
                                  stack_dump (stack); \
-                                 abort ();           \
                              }      
 #else 
     #define assert_ok(stack) 1+1;                 
