@@ -175,23 +175,42 @@ void print_array (Stack_t* stack)
 
 size_t stack_hash (Stack_t* stack)
 {
-   size_t temp = stack -> capacity ^ stack -> size + stack -> capacity | stack -> size;
+    unsigned int total_hash = 0;
 
-    for (int i = 0; i < stack -> size; i++)
+    unsigned int  i_1 = 0;
+    unsigned int  hash_1 = 0;
+
+    while (i_1 != stack -> size)
     {
-        if (temp == 0)
-            temp |= ((size_t)(*(stack -> data + i))) << i + ((size_t)(*(stack -> data + i))) | i;
-        else if (i % 3 == 0)
-            temp ^= (size_t)(*(stack -> data + i)) + i << (size_t)(*(stack -> data + i));
-        else  if (i % 3 == 1)
-            temp ^= (size_t)(*(stack -> data + i)) - i ^ (size_t)(*(stack -> data + i));
-        else    
-            temp |= (size_t)(*(stack -> data + i)) - i ^ (size_t)(*(stack -> data + i));
+        hash_1 += stack->data[i_1++];
+        hash_1 += hash_1 << 10;
+        hash_1 ^= hash_1 >> 6;
     }
 
-    temp <<= stack -> capacity ^ stack -> error;
+    hash_1 += hash_1 << 3;
+    hash_1 ^= hash_1 >> 11;
+    hash_1 += hash_1 << 15;
 
-    stack -> hash = temp;
-    
-    return stack -> hash;
+    total_hash += hash_1;
+
+
+    unsigned int i_2 = 0;
+    unsigned int hash_2 = 0;
+
+    while (i_2 != strlen(stack->name))
+    {
+        hash_2 += stack->name[i_2++];
+        hash_2 += hash_1 << 10;
+        hash_2 ^= hash_1 >> 6;
+    }
+
+    hash_2 += hash_2 << 3;
+    hash_2 ^= hash_2 >> 11;
+    hash_2 += hash_2 << 15;
+
+    total_hash += hash_2;
+
+    stack->hash = total_hash;
+    //я скопипастил
+    return total_hash;
 }
